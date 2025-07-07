@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 import authRoutes from './routes/auth.routes.js'; // Importing auth routes
 import connectMongoDB from './db/connectMongoDB.js';
+import cookieParser from 'cookie-parser';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -11,6 +12,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Middleware to parse cookies
 
 // Sample route
 app.get('/', (req, res) => {
