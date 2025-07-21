@@ -1,11 +1,20 @@
 import express from 'express';
 import dotenv from 'dotenv';
-
-import authRoutes from './routes/auth.routes.js'; // Importing auth routes
-import connectMongoDB from './db/connectMongoDB.js';
 import cookieParser from 'cookie-parser';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Importing routes
+import authRoutes from './routes/auth.routes.js'; // Importing auth routes
+import userRoutes from './routes/user.routes.js'; // Importing user routes
+
+import connectMongoDB from './db/connectMongoDB.js';
 
 dotenv.config(); // Load environment variables from .env file
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,8 +29,8 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Twitter Clone API!');
 });
 
-// Use auth routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // Use auth routes
+app.use('/api/users', userRoutes); // Use user routes
 
 // Start the server
 app.listen(PORT, () => {
