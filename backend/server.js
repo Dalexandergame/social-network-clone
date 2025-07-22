@@ -6,6 +6,7 @@ import { v2 as cloudinary } from 'cloudinary';
 // Importing routes
 import authRoutes from './routes/auth.routes.js'; // Importing auth routes
 import userRoutes from './routes/user.routes.js'; // Importing user routes
+import postRoutes from './routes/post.routes.js'; // Importing post routes
 
 import connectMongoDB from './db/connectMongoDB.js';
 
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes); // Use auth routes
 app.use('/api/users', userRoutes); // Use user routes
+app.use('/api/posts', postRoutes); // Use post routes
 
 // Start the server
 app.listen(PORT, () => {
