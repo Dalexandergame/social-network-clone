@@ -7,7 +7,9 @@ import { v2 as cloudinary } from 'cloudinary';
 import authRoutes from './routes/auth.route.js'; // Importing auth routes
 import userRoutes from './routes/user.route.js'; // Importing user routes
 import postRoutes from './routes/post.route.js'; // Importing post routes
+import notificationRoutes from './routes/notification.route.js'; // Importing notification routes
 
+// Importing database connection function
 import connectMongoDB from './db/connectMongoDB.js';
 
 dotenv.config(); // Load environment variables from .env file
@@ -33,6 +35,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes); // Use auth routes
 app.use('/api/users', userRoutes); // Use user routes
 app.use('/api/posts', postRoutes); // Use post routes
+app.use('/api/notifications', notificationRoutes); // Use notification routes
 
 // Start the server
 app.listen(PORT, () => {
