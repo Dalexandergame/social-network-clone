@@ -5,28 +5,55 @@ import XSvg from '../../../components/svgs/X'
 
 import { MdOutlineMail } from 'react-icons/md'
 import { MdPassword } from 'react-icons/md'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 
 const LoginPage = () => {
 
     const [formData, setFormData] = useState({
-        email: '',
+        username: '',
         password: '',
     });
+
+    const queryClient = useQueryClient()
+
+    const { mutate: loginFn, isError, isPending, error } = useMutation({
+        mutationFn: async({ username, password }) => {
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                })
+
+                const data = await res.json()
+                if(!res.ok) throw new Error(data.error || 'Somthing went wrong!')
+                
+            } catch (error) {
+                throw error;
+            }
+        },
+        onSuccess: () => {
+            toast.success('Login successful!')
+            queryClient.invalidateQueries({queryKey: ['currentUser']})
+        }
+    })
+
     const handleSubmit = (e) => {
         e.preventDefault();
         // Handle form submission logic here
-        console.log(formData);
+        loginFn(formData);
     }
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        // const { name, value } = e.target;
         setFormData({
             ...formData,
-            [name]: value,
+            [e.target.name]: e.target.value,
         });
     }
-
-    const isError = false;
     
   return (
     <div className='max-w-screen-xl mx-auto flex h-screen px-10'>
@@ -40,12 +67,12 @@ const LoginPage = () => {
                 <label className='input input-bordered rounded flex items-center gap-2'>
                     <MdOutlineMail />
                     <input 
-                        type="email" 
-                        placeholder='Email' 
-                        className='grow' 
-                        value={formData.email}
+                        type="text" 
+                        placeholder='username' 
+                        className='w-40 grow' 
+                        value={formData.username}
                         onChange={handleInputChange}
-                        name='email'
+                        name='username'
                     />
                 </label>
                 <label className='input input-bordered rounded flex items-center gap-2'>
@@ -59,8 +86,8 @@ const LoginPage = () => {
                         name='password'
                     />
                 </label>
-                <button className='btn rounded-full btn-primary text-white'>Log in</button>
-                {isError && <p className='text-red-500'>Invalid email or password</p>}
+                <button className='btn rounded-full btn-primary text-white'>{isPending ? 'Loading...' : 'Log in'}</button>
+                {isError && <p className='text-red-500'>{error.message}</p>}
             </form>
             <div>
                 <p className='text-white text-lg'>{"Don't"} have an account?</p>
