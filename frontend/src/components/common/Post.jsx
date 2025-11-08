@@ -8,12 +8,21 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
+import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post, isLoading }) => {
     const [comment, setComment] = useState("");
 
     const { data: currentUser } = useQuery({ queryKey: ['currentUser'] })
     const queryClient = useQueryClient()
+
+    const postOwner = post.user;
+    const isLiked = post.likes.includes(currentUser._id); // Change this to true to see the liked state
+    
+    const isMyPost = currentUser._id === post.user_id; // Change this to false to hide the delete button
+
+    const formattedDate = formatPostDate(post.createdAt); // You can format the date as needed
+
 
     const { mutate: deletePost, isPending: isDeleting } = useMutation({
         mutationFn: async() => {
@@ -70,14 +79,31 @@ const Post = ({ post, isLoading }) => {
         }
     })
 
-    const postOwner = post.user;
-    const isLiked = post.likes.includes(currentUser._id); // Change this to true to see the liked state
-    
-    const isMyPost = currentUser._id === post.user_id; // Change this to false to hide the delete button
+    const { mutate: commentPost, isPending: isCommenting } = useMutation({
+        mutationFn: async() => {
+            try {
+                const res = await fetch('/api/posts/comment' + post._id, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: comment })
+                })
 
-    const formattedDate = "1h"; // You can format the date as needed
+                const data = res.json()
+                if(!res.ok) throw new Error(data.error || 'Something went wrong')
 
-    const isCommenting = false;
+                return data
+            } catch (error) {
+                throw error
+            }
+        },
+        onSuccess: () => {
+            toast.success('Comment added successfully')
+            setComment("")
+            queryClient.invalidateQueries({queryKey: ['posts']})
+        }
+    })
 
     const handleDeletePost = () => {
         deletePost()
@@ -86,6 +112,8 @@ const Post = ({ post, isLoading }) => {
     const handlePostComment = (e) => {
         e.preventDefault();
         // Handle posting comment logic here
+        if(isCommenting) return;
+        commentPost()
     }
 
     const handleLikedPost = () => {
