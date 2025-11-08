@@ -14,8 +14,8 @@ const Post = ({ post, isLoading }) => {
 
     const { data: currentUser } = useQuery({ queryKey: ['currentUser'] })
     const queryClient = useQueryClient()
-    
-    const { mutate: deletePost, isPending } = useMutation({
+
+    const { mutate: deletePost, isPending: isDeleting } = useMutation({
         mutationFn: async() => {
             try {
                 const res = await fetch('/api/posts/delete/' + post._id, {
@@ -36,8 +36,42 @@ const Post = ({ post, isLoading }) => {
         }
     })
 
+    const { mutate: likePost, isPending: isLiking } = useMutation({
+        mutationFn: async() => {
+            try {
+                const res = await fetch('/api/posts/like/' + post._id, {
+                    method: 'POST'
+                })
+
+                const data = await res.json()
+                if(!res.ok) throw new Error(data.error || 'Something went wrong')
+
+                return data
+            } catch (error) {
+                throw error
+            }
+        },
+        onSuccess: (updatedLikes) => {
+            queryClient.setQueryData(['posts'], (oldData) => {
+                return oldData.map((p) => {
+                    if(p._id === post._id) {
+                        return {
+                            ...p,
+                            likes: updatedLikes
+                        }
+                    }
+
+                    return p;
+                })
+            })
+        },
+        onError: (error) => {
+            toast.error(error.message)
+        }
+    })
+
     const postOwner = post.user;
-    const isLiked = false; // Change this to true to see the liked state
+    const isLiked = post.likes.includes(currentUser._id); // Change this to true to see the liked state
     
     const isMyPost = currentUser._id === post.user_id; // Change this to false to hide the delete button
 
@@ -54,7 +88,10 @@ const Post = ({ post, isLoading }) => {
         // Handle posting comment logic here
     }
 
-    const handleLikedPost = () => {}
+    const handleLikedPost = () => {
+        if(isLiking) return;
+        likePost()
+    }
 
     return (
         <>
@@ -76,8 +113,8 @@ const Post = ({ post, isLoading }) => {
                         </span>
                         {isMyPost && (
                             <span className="flex justify-end flex-1">
-                                <FaTrash className="cursor-pointer hover:text-red-500" onClick={handleDeletePost} />
-                                {isPending && (<LoadingSpinner size="md" />)}
+                                {!isDeleting && (<FaTrash className="cursor-pointer hover:text-red-500" onClick={handleDeletePost} />)}
+                                {isDeleting && (<LoadingSpinner size="md" />)}
                             </span>
                         )}
                     </div>
@@ -142,7 +179,7 @@ const Post = ({ post, isLoading }) => {
                                         />
                                         <button className="btn btn-primary rounded-full btn-sm text-white px-4">
                                             {isCommenting ? (
-                                                <span className="loading loading-spinner loading-md"></span>
+                                                <LoadingSpinner size="md" />
                                             ) : (
                                                 "Post"
                                             )}
@@ -158,10 +195,11 @@ const Post = ({ post, isLoading }) => {
                                 <span className="text-sm text-slate-500 group-hover:text-green-500">0</span>
                             </div>
                             <div className="flex gap-1 items-center group cursor-pointer" onClick={handleLikedPost}>
+                                {isLiking && <LoadingSpinner size="sm" />}
                                 {isLiked && (
                                     <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
                                 )}
-                                {!isLiked && <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500" />}
+                                {!isLiked && !isLiking && <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500" />}
 
                                 <span
                                     className={`text-sm text-slate-500 group-hover:text-pink-500 ${

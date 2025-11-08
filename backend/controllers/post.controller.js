@@ -115,22 +115,22 @@ export const likeUnlikePosts = async (req, res) => {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        const isLiked = post.likes.includes(userId);
-        if (isLiked) {
+        const userLikedPost = post.likes.includes(userId);
+        
+        if (userLikedPost) {
             // If already liked, unlike the post
-            post.likes.pull(userId);
-            user.likedPosts.pull(postId); // Remove post from user's liked posts
+            await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+            await User.updateOne({ _id: userId }, {$pull: {likedPosts: postId } }); // Remove post from user's liked posts
 
-            res.status(200).json({
-                message: 'Post unliked successfully',
-                likes: post.likes,
-                likedPosts: user.likedPosts,
-            });
+            const updatedLikes = post.likes.filter(id => id.toString() !== userId.toString())
+
+            res.status(200).json(updatedLikes);
 
         } else {
             // If not liked, like the post
             post.likes.push(userId);
-            user.likedPosts.push(postId); // Add post to user's liked posts
+            await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } }); // Add post to user's liked posts
+            await post.save();
 
             const notification = new Notification({
                 type: 'like',
@@ -139,16 +139,10 @@ export const likeUnlikePosts = async (req, res) => {
             });
 
             await notification.save(); // Save the notification if you have a Notification model
+            const updatedLikes = post.likes
+            res.status(200).json(updatedLikes)
         }
 
-        await post.save();
-        await user.save(); // Save the user to update liked posts
-
-        res.status(200).json({
-            message: isLiked ? 'Post unliked successfully' : 'Post liked successfully',
-            likes: post.likes,
-            likedPosts: user.likedPosts,
-        });
     } catch (error) {
         console.error('Error liking/unliking post in Controller:', error);
         res.status(500).json({ message: 'Internal server error' });
