@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react'
-import { Link } from "react-router-dom"
+import { useEffect, useRef, useState } from 'react'
+import { Link, useParams } from "react-router-dom"
 
-import Post from "../../components/common/Post"
+import Posts from "../../components/common/Posts"
 import ProfileHeaderSkeleton from "../../components/skeletons/ProfileHeaderSkeleton"
 import EditProfileModal from './EditProfileModal'
 
@@ -11,6 +11,8 @@ import { FaArrowLeft } from "react-icons/fa6"
 import { IoCalendarOutline } from "react-icons/io5"
 import { FaLink } from "react-icons/fa"
 import { MdEdit } from "react-icons/md"
+import { useQuery } from '@tanstack/react-query'
+import { formatMemberSinceDate } from '../../utils/date'
 
 const ProfilePage = () => {
 
@@ -21,19 +23,22 @@ const ProfilePage = () => {
     const coverImgRef = useRef(null)
     const profileImgRef = useRef(null)
 
-    const isLoading = false;
+    const { username } = useParams()
+
     const isMyProfile = true;
 
-    const user = {
-        _id: '1',
-        fullName: 'John Doe',
-        username: 'johndoe',
-        profileImg: '/avatars/boy2.png',
-        coverImg: '/cover.png',
-        bio: 'lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-        following: ["1", "2", "3"],
-        followers: ["1", "2", "3"],
-    }
+    const { data: user, isLoading, refetch, isRefetching } = useQuery({
+        queryKey: ['userProfile'],
+        queryFn: async() => {
+            try {
+                const res = await fetch(`/api/users/profile/${username}`)
+                const data = await res.json()
+                if(!res.ok) throw new Error(data.error || 'Something went wrong')
+            } catch (error) {
+                throw error;
+            }
+        }
+    })
 
     const handleChange = (e, state) => {
         const file = e.target.files[0];
@@ -47,14 +52,20 @@ const ProfilePage = () => {
         }
     };
 
+    const memberSinceDate = formatMemberSinceDate(user?.createdAt)
+
+    useEffect(() => {
+        refetch();
+    }, [username, refetch]);
+
   return (
     <>
         <div className="flex-[4_4_0] border-r border-gray-700 min-h-screen">
             {/*Header*/}
-            {isLoading && <ProfileHeaderSkeleton />}
-            {!isLoading && !user && <p className='text-center text-lg mt-4'>User not found</p>}
+            {isLoading || isRefetching && <ProfileHeaderSkeleton />}
+            {!isLoading && !isRefetching && !user && <p className='text-center text-lg mt-4'>User not found</p>}
             <div className="flex flex-col">
-                {!isLoading && user && (
+                {!isLoading && !isRefetching && user && (
                     <>
                         <div className="flex gap-10 px-4 py-2 items-center">
                             <Link to="/" >
@@ -140,7 +151,7 @@ const ProfilePage = () => {
                                 {user?.link && (
                                     <div className="flex gap-1 items-center">
                                         <>
-                                            <Falink className='w-3 h-3 text-slate-500' />
+                                            <FaLink className='w-3 h-3 text-slate-500' />
                                             <a
                                                 href={user.link}
                                                 target="_blank"
@@ -154,7 +165,9 @@ const ProfilePage = () => {
                                 )}
                                 <div className="flex gap-2 items-center">
                                     <IoCalendarOutline className='w-4 h-4 text-slate-500' />
-                                    <span className='text-sm text-slate-500'>Joined July 2021</span>
+                                    <span className='text-sm text-slate-500'>
+                                        {`Joined since ${memberSinceDate}`}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -191,7 +204,7 @@ const ProfilePage = () => {
                     </> 
                 )}
 
-                <Posts />
+                <Posts feedType={feedType} username={username} userId={user?._id} />
             </div>
         </div>            
     </>
