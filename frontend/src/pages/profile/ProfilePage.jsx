@@ -13,6 +13,8 @@ import { FaLink } from "react-icons/fa"
 import { MdEdit } from "react-icons/md"
 import { useQuery } from '@tanstack/react-query'
 import { formatMemberSinceDate } from '../../utils/date'
+import useFollow from '../../hooks/useFollow'
+import useUpdateUserProfile from '../../hooks/useUpdateUserProfile'
 
 const ProfilePage = () => {
 
@@ -24,8 +26,8 @@ const ProfilePage = () => {
     const profileImgRef = useRef(null)
 
     const { username } = useParams()
-
-    const isMyProfile = true;
+    const { followUser, isPending } = useFollow();
+    const { data: currentUser } = useQuery({ queryKey: ['currentUser']})
 
     const { data: user, isLoading, refetch, isRefetching } = useQuery({
         queryKey: ['userProfile'],
@@ -40,6 +42,8 @@ const ProfilePage = () => {
         }
     })
 
+    const { updateProfile, isUpdating } = useUpdateUserProfile()
+
     const handleChange = (e, state) => {
         const file = e.target.files[0];
         if (file) {
@@ -52,6 +56,8 @@ const ProfilePage = () => {
         }
     };
 
+    const isMyProfile = currentUser?._id === user?._id;
+    const isFollowing = currentUser?.followers.includes(user?._id)
     const memberSinceDate = formatMemberSinceDate(user?.createdAt)
 
     useEffect(() => {
@@ -122,21 +128,28 @@ const ProfilePage = () => {
                             </div>
                         </div>
                         <div className="flex justify-end px-4 mt-5">
-                            {isMyProfile && <EditProfileModal />}
+                            {isMyProfile && <EditProfileModal currentUser={currentUser} />}
                             {!isMyProfile && (
                                 <button
                                     className="btn btn-outline rounded-full btn-sm"
-                                    onClick={() => alert('Followed successfully!')}
+                                    onClick={() => followUser(user?._id)}
                                 >
-                                    Follow
+                                    {isPending && 'Processing...'}
+                                    {!isPending && isFollowing && 'Unfollow'}
+                                    {!isPending && !isFollowing && 'Follow'}
                                 </button>
                             )}
                             {(coverImg || profileImg) && (
                                 <button
                                     className="btn btn-primary rounded-full btn-sm  text-white px-4 ml-2"
-                                    onClick={() => alert('Profile updated successfully!')}
+                                    onClick={ async () => {
+                                            await updateProfile({coverImg, profileImg})
+                                            setCoverImg(null)
+                                            setProfileImg(null)
+                                        }    
+                                    }
                                 >
-                                    Update
+                                    {isUpdating ? 'Updating...' : 'Update'}
                                 </button>
                             )}
                         </div>
