@@ -82,7 +82,7 @@ const Post = ({ post, isLoading }) => {
     const { mutate: commentPost, isPending: isCommenting } = useMutation({
         mutationFn: async() => {
             try {
-                const res = await fetch('/api/posts/comment' + post._id, {
+                const res = await fetch('/api/posts/comment/' + post._id, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -225,13 +225,13 @@ const Post = ({ post, isLoading }) => {
                             <div className="flex gap-1 items-center group cursor-pointer" onClick={handleLikedPost}>
                                 {isLiking && <LoadingSpinner size="sm" />}
                                 {isLiked && (
-                                    <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
+                                    <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 group-hover:text-pink-500" />
                                 )}
-                                {!isLiked && !isLiking && <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500" />}
+                                {!isLiked && !isLiking && <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />}
 
                                 <span
-                                    className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                                        isLiked ? "text-pink-500" : ""
+                                    className={`text-sm  group-hover:text-pink-500 ${
+                                        isLiked ? "text-pink-500" : "text-slate-500"
                                     }`}
                                 >
                                     {post.likes.length}

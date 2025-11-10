@@ -19,7 +19,7 @@ const CreatePost = () => {
   const { mutate: createPost, isPending, isError, error } = useMutation({
     mutationFn: async({text, img}) => {
       try {
-        const res = await fetch('/api/posts/createpost', {
+        const res = await fetch('/api/posts/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ const CreatePost = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Handle form submission logic here
-    alert('Post created!');
+    createPost();
   }
 
   const handleImgChange = (e) => {
